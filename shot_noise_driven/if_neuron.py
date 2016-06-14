@@ -5,18 +5,33 @@ analytics for general integrate-and-fire neurons driven by excitatory shot noise
 
 from analytics.decorators.cache_dec import cached
 from analytics.decorators.param_dec import dictparams
+from analytics.helpers import integrate, heav
 from numpy import exp, cos, sin, sqrt, real, arctan, arctanh, log, abs
-from scipy.integrate import quad
 
 dv = 0.# 1e-10
+
+infty=15
+
+class PIF:
+    def f(self, v, mu):
+        return mu
+    def fp(self, v, mu):
+        return 0.
+    def phi(self, v, mu, rin_e, a_e):
+        return  v/a_e + rin_e * v/mu
+    @cached
+    def intervals(self, mu, vr, vt):
+        return ( ((-infty, vt, vt+dv),) if mu<0 else ((vr, vt, vr-dv),) )
+    def __hash__(self): # needed for caching
+        return "PIFsn"
 
 class LIF:
     def f(self, v, mu):
         return mu - v
     def fp(self, v, mu):
         return -1.
-    def phi(self, v, mu, rin, a):
-        return v/a - rin*log(abs(mu-v))
+    def phi(self, v, mu, rin_e, a_e):
+        return v/a_e - rin_e * log(abs(mu-v))
     @cached
     def intervals(self, mu, vr, vt):
         sfp = mu
@@ -34,8 +49,8 @@ class QIF:
         return mu + v**2
     def fp(self, v, mu):
         return 2*v
-    def phi(self, v, mu, rin, a):
-        return  v/a + rin * (1./sqrt(mu)*arctan(v/sqrt(mu)) if mu > 0 else 
+    def phi(self, v, mu, rin_e, a_e):
+        return  v/a_e + rin_e * (1./sqrt(mu)*arctan(v/sqrt(mu)) if mu > 0 else 
                     -1./sqrt(-mu) * (arctanh(v/sqrt(-mu)) if (sqrt(-mu) > v and v > -sqrt(-mu)) 
                                         else .5*log((v/sqrt(-mu)+1.)/(v/sqrt(-mu)-1.))))
     @cached
@@ -61,27 +76,22 @@ class QIF:
     def __hash__(self): # needed for caching
         return "QIFsn"
 
-def heav(x):
-    return x > 0
-
-def integrate(f, a, b):
-    return quad(f, a, b)[0]
 
 @dictparams
 @cached
-def alpha(model, mu, rin, a, vr, vt, tr):
+def alpha(model, mu, rin_e, a_e, vr, vt, tr):
     """Return the fraction of trajectories that cross due to an incoming spike (i.e. not by drifting)"""
-    phi = lambda v: model.phi(v, mu, rin, a)
+    phi = lambda v: model.phi(v, mu, rin_e, a_e)
     f = lambda v: model.f(v, mu)
     ln, rn, cn = model.intervals(mu, vr, vt)[-1]
-    return 1. - (heav(vr-cn)*exp(phi(vr)-phi(vt))+1./a*integrate(lambda x: exp(phi(x)-phi(vt))*heav(x-vr), cn, vt))
+    return 1. - (heav(vr-cn)*exp(phi(vr)-phi(vt))+1./a_e*integrate(lambda x: exp(phi(x)-phi(vt))*heav(x-vr), cn, vt))
 
 
 @dictparams
 @cached
-def T1(model, mu, rin, a, vr, vt, tr):
+def T1(model, mu, rin_e, a_e, vr, vt, tr):
     """Return the first moment of the ISI density (i.e. the inverse firing rate)"""
-    phi = lambda v: model.phi(v, mu, rin, a)
+    phi = lambda v: model.phi(v, mu, rin_e, a_e)
     f = lambda v: model.f(v, mu)
     
     def plusint(l, r):
@@ -95,7 +105,7 @@ def T1(model, mu, rin, a, vr, vt, tr):
     for i in ints:
         l, r, c = i
         cbar = l if c == r else r
-        res += 1./a * integrate(lambda x: heav(x-vr) * minusint(x, cbar), l, r)
+        res += 1./a_e * integrate(lambda x: heav(x-vr) * minusint(x, cbar), l, r)
 
     ln, rn, cn = ints[-1]
     l0, r0, c0 = ints[0]
@@ -105,17 +115,17 @@ def T1(model, mu, rin, a, vr, vt, tr):
 
 @dictparams
 @cached
-def r0(model, mu, rin, a, vr, vt, tr):
+def r0(model, mu, rin_e, a_e, vr, vt, tr):
     """Return the firing rate"""
-    return 1./if_sn_T1(model, mu, rin, a, vr, vt, tr)
+    return 1./T1(locals())
 
 @dictparams
 @cached
-def P0(model, v, mu, rin, a, vr, vt, tr):
+def P0(model, v, mu, rin_e, a_e, vr, vt, tr):
     """Return the stationary density at a particular voltage
     v can *not* be an array!
     """
-    phi = lambda v: model.phi(v, mu, rin, a)
+    phi = lambda v: model.phi(v, mu, rin_e, a_e)
     f = lambda v: model.f(v, mu)
     fp = lambda v: model.fp(v, mu)
     ints = model.intervals(mu, vr, vt)
@@ -123,7 +133,6 @@ def P0(model, v, mu, rin, a, vr, vt, tr):
         return 0.
 
     r0 = 1./T1(locals())
-
 
     # which interval are we in
     if v <= ints[0][0]:
@@ -134,5 +143,5 @@ def P0(model, v, mu, rin, a, vr, vt, tr):
             break
 
     return r0/f(v) * (  ((1.if c>vr else 0.)-heav(v-vr)) * (-exp(phi(vr)-phi(v)))
-                                +1./a * integrate(lambda x: exp(phi(x)-phi(v))*(heav(x-vr)-heav(x-vt)), c, v))
+                                +1./a_e * integrate(lambda x: exp(phi(x)-phi(v))*(heav(x-vr)-heav(x-vt)), c, v))
 
