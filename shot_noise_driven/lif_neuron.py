@@ -7,7 +7,7 @@ from analytics.decorators.param_dec import dictparams
 from numpy import exp, cos, sin, sqrt, real, arctan, arctanh, log, abs, pi
 from analytics.helpers import integrate, heav
 import analytics.shot_noise_driven.if_neuron as ifana
-from specfunc import hyp1f1
+from analytics.specfunc import hyp1f1
 import numpy as np
 import mpmath as mp
 
