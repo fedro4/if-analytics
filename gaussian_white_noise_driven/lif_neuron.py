@@ -20,12 +20,26 @@ def r0(fs, mu, D, tr, vr, vt):
 def powspec(fs, mu, D, tr, vr, vt):
     """Return the power spectrum of a GWN-driven LIF
     """
-    def Del(mu, D):
-        return (vr**2 - vt**2 + 2*mu*(vt-vr))/(4*D)
-
+    delta = (vr**2-vt**2+2*mu*(vt-vr))/(4*D)
     io = 1j*(2*pi*fs)
     pcfdvr = pcfd(io,(mu-vr)/sqrt(D))
     pcfdvt = pcfd(io,(mu-vt)/sqrt(D))
-    return r0(locals()) *  (abs(pcfdvt)**2 - exp(2 * Del(mu, D)) * abs(pcfdvr)**2)/ abs(pcfdvt - exp(Del(mu, D)) * exp(io*tr) * pcfdvr)**2
+    return r0(locals()) *  (abs(pcfdvt)**2 - exp(2*delta) * abs(pcfdvr)**2)/ abs(pcfdvt - exp(delta) * exp(io*tr) * pcfdvr)**2
 
 
+@dictparams
+@cached
+def suscep(fs, mu, D, vr, vt, tr):
+    """Return the 
+    """
+    io = 1j*2*pi*fs
+    delta = (vr**2-vt**2+2*mu*(vt-vr))/(4*D)
+    return r0(locals()) * io/sqrt(D)/(io-1) * (pcfd(io-1,(mu-vt)/sqrt(D)) - exp(delta) * pcfd(io-1,(mu-vr)/sqrt(D))) / (pcfd(io,(mu-vt)/sqrt(D)) - exp(delta + io*tr) * pcfd(io,(mu-vr)/sqrt(D)))
+
+@dictparams
+@cached
+def suscep_noisemod(fs, mu, D, vr, vt, tr):
+    io = 1j*2*pi*fs
+    delta = (vr**2-vt**2+2*mu*(vt-vr))/(4*D)
+    res = []
+    return r0(locals()) * io*(io-1.)/D/(2-io) * (pcfd(io-2, (mu-vt)/sqrt(D)) - exp(delta) * pcfd(io-2, (mu-vr)/sqrt(D))) / (pcfd(io, (mu-vt)/sqrt(D)) - exp(delta + io*tr) * pcfd(io, (mu-vr)/sqrt(D))))
