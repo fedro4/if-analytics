@@ -42,4 +42,4 @@ def suscep_noisemod(fs, mu, D, vr, vt, tr):
     io = 1j*2*pi*fs
     delta = (vr**2-vt**2+2*mu*(vt-vr))/(4*D)
     res = []
-    return r0(locals()) * io*(io-1.)/D/(2-io) * (pcfd(io-2, (mu-vt)/sqrt(D)) - exp(delta) * pcfd(io-2, (mu-vr)/sqrt(D))) / (pcfd(io, (mu-vt)/sqrt(D)) - exp(delta + io*tr) * pcfd(io, (mu-vr)/sqrt(D))))
+    return r0(locals()) * io*(io-1.)/D/(2-io) * (pcfd(io-2, (mu-vt)/sqrt(D)) - exp(delta) * pcfd(io-2, (mu-vr)/sqrt(D))) / (pcfd(io, (mu-vt)/sqrt(D)) - exp(delta + io*tr) * pcfd(io, (mu-vr)/sqrt(D)))
