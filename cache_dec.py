@@ -28,14 +28,16 @@ def cached(func):
     @wraps(func)
     def wrapper(*args, **kwargs): # kwargs does not work yet!
         global misses, hits
-        key = tuple([func.__name__]) + tuple(("",hashit(a)) for a in args) + tuple((k,hashit(v)) for k, v in kwargs.items())
+        key = tuple([func.__name__]) + tuple(("",hashit(a)) for a in args) + tuple((k,hashit(v)) for k, v in sorted(kwargs.items()))
         if no_caching:
             return func(*args, **kwargs)
         elif not cache.has_key(key):
+            #print func.__name__ + " missed " + str(key)
             cache[key] = func(*args, **kwargs)
             misses += 1
         else:
             hits += 1
+            #print func.__name__ + " hit"
         return cache[key]
     return wrapper
        
