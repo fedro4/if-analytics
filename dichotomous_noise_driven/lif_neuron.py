@@ -23,6 +23,15 @@ def r0(mu, s, kp, km, vr, vt, tr):
 
 @dictparams
 @cached
+def r0_altern(mu, s, kp, km, vr, vt, tr):
+    """Alternative expression for the stationary firing rate"""
+    #return ( 1./(tr + (kp+km) * integrate(lambda x: integrate(lambda y: abs(mu-y+s)**kp/abs(mu-x+s)**(kp+1) * abs(mu-y-s)**(km-1)/abs(mu-x-s)**km, x, mu-s), vr, vt) 
+    return ( 1./(tr + (kp+km) * integrate(lambda x: integrate(lambda y: abs((mu-y+s)/(mu-x+s))**(kp) * abs((mu-y-s)/(mu-x-s))**(km) * 1./(mu-x+s) * 1./(mu-y-s), x, mu-s), vr, vt) 
+           + (1-exp(-tr*(kp+km)))/(kp+km) * (-1+(kp+km) * integrate(lambda x: abs((mu-x+s)/(mu-vr+s))**kp * abs((mu-x-s)/(mu-vr-s))**km * 1./(mu-x-s), vr, mu-s)) ))
+
+
+@dictparams
+@cached
 def powspec(fs, mu, s, kp, km, vr, vt, tr):
     """Return the power spectrum"""
     return r0(locals()) * (1.+2*st_rate(locals()).real)
@@ -61,11 +70,21 @@ def powspec_disc_n(n, fs, mu, s, kp, km, vr, vt, tr):
 
 @dictparams
 @cached
+def powspec_exp(fs, mu, s, kp, km, vr, vt, tr):
+    zr = z(mu, s, vr)
+    zt = z(mu, s, vt)
+    io = 1j*(2*pi*fs)
+    H = lambda u: u**(1+io-km) * hyp2f1(1-km,1+kp,2-km+io,u)
+    return r0(locals()) * (np.abs(H(zt))**2-np.abs(H(zr))**2)/np.abs(H(zt)-H(zr))**2   
+
+
+@dictparams
+@cached
 def powspec_disc(fs, mu, s, kp, km, vr, vt, tr):
     """Return the part of the power spectrum (a superposition of Lorentzians) that is due to the delta-peaks in the spike-triggered rate""" 
     o=2*pi*fs
     Td = ifana.LIF().Tdp(mu, s, vr, vt) + tr
-    nmax = int(1000*np.max(fs)/(1./Td))
+    nmax = int(10000*np.max(fs)/(1./Td))
     nmin = -nmax 
     print nmin, nmax
     res = np.zeros(len(fs));
