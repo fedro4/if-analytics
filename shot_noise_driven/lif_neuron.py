@@ -45,6 +45,14 @@ def suscep(fs, mu, rin_e, a_e, vr, vt, tr):
 
 @dictparams
 @cached
+def suscep_highf(fs, mu, rin_e, a_e, vr, vt, tr):
+    """Return the high-frequency limit of an LIF driven by excitatory shot noise with respect to a current modulation"""
+    io = 1j*(2*pi*fs)
+    return -1./io * r0(locals())/a_e
+
+
+@dictparams
+@cached
 def suscep_ratemod(fs, mu, rin_e, a_e, vr, vt, tr):
     """Return the susceptibility of a exc-shot-noise-driven LIF with respect to a modulation of the input rate
     XXX check: I think as it is, this implementation only works for mu < vr""" 
