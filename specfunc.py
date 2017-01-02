@@ -1,7 +1,7 @@
 """ python interface to three kinds of special functions:
 
-    hyp2f1 - the Gauss hypergeometric function (for 0<|z|< 1!)
-    hyp1f1 - confluent hypergeometric function (for 0<|z|< 1!)
+    hyp2f1 - the Gauss hypergeometric function (for 0<|z|< 1! [*])
+    hyp1f1 - confluent hypergeometric function (for 0<|z|< 1! [*])
     pcfd - parabolic cylinder functions
 
 the bonus in comparison to most existing implementations is:
@@ -9,10 +9,15 @@ the bonus in comparison to most existing implementations is:
     - they take complex arguments everywhere
 
 if libspecfunc.so is found, fast c implementations are used 
-(see specfunc.c), otherwise the system falls back to the slower
+(see specfunc.c), otherwise the system tries to fall back to the slower
 but excellent mpmath python library
 
 libspecfunc.so needs to be in the same directory as this module!
+
+[*] if mpmath is used, this does analytical continuation for |z| > 1
+I guess this could be relativley easily implemented also for the faster 
+case...
+
 """
 
 import numpy as np
@@ -47,6 +52,7 @@ try:
 except OSError as e:
     print e
     print("cannot load %s, falling back to mpmath..." % libname)
+    print("\t(you might need to compile the library in \n\t %s)" % os.path.dirname(__file__))
     use_mpmath = True
     #mp = __import__("mpmath")
 
@@ -86,15 +92,15 @@ if lib is not None:
     lib.hyp2f1_all_arr.restype = None
     lib.hyp2f1_all_arr.argtypes = [array_1d_complex, array_1d_complex, array_1d_complex, array_1d_complex, array_1d_complex, c_int, POINTER(PrmsAndInfo)]
 
-    # pcdf
-    lib.pcfd.restype = Complex
-    lib.pcfd.argtypes = [Complex, Complex]
-    # pcdf_nu_arr
-    lib.pcfd_nu_arr.restype = None
-    lib.pcfd_nu_arr.argtypes = [array_1d_complex, Complex, array_1d_complex, c_int, POINTER(PrmsAndInfo)]
-    # pcdf_z_arr
-    lib.pcfd_z_arr.restype = None
-    lib.pcfd_z_arr.argtypes = [Complex, array_1d_complex, array_1d_complex, c_int, POINTER(PrmsAndInfo)]
+    ## pcdf
+    #lib.pcfd.restype = Complex
+    #lib.pcfd.argtypes = [Complex, Complex]
+    ## pcdf_nu_arr
+    #lib.pcfd_nu_arr.restype = None
+    #lib.pcfd_nu_arr.argtypes = [array_1d_complex, Complex, array_1d_complex, c_int, POINTER(PrmsAndInfo)]
+    ## pcdf_z_arr
+    #lib.pcfd_z_arr.restype = None
+    #lib.pcfd_z_arr.argtypes = [Complex, array_1d_complex, array_1d_complex, c_int, POINTER(PrmsAndInfo)]
 
 def hyp1f1(a, b, z):
     #global mp
