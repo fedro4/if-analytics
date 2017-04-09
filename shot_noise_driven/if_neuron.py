@@ -10,6 +10,7 @@ from numpy import exp, cos, sin, sqrt, real, arctan, arctanh, log, abs
 from scipy.special import lambertw
 from scipy.integrate import quad, dblquad, nquad, quadrature
 import os
+import sys
 import ctypes
 
 dv = 0#1e-10
@@ -17,6 +18,12 @@ dv = 0#1e-10
 infty=15
 
 epsrel = 1e-3
+
+eiflib = None
+try:
+    eiflib = ctypes.cdll.LoadLibrary(os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so");
+except OSError:
+    print "cannnot load './eif_phi/libeif_phi.so'. maybe you need to compile it? this is only a problem if you plan to use the EIF analytics"
 
 class PIF:
     def f(self, v, mu):
@@ -87,8 +94,10 @@ class EIF:
         self.d = d
         self.vtb = vtb
         self.intcache = {}
-        print os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so"
-        self.lib = ctypes.cdll.LoadLibrary(os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so");
+#        self.lib = ctypes.cdll.LoadLibrary(os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so");
+        if eiflib is None:
+            raise OSError("libeif_phi not loaded")
+        self.lib = eiflib
         self.lib.phi_integrand.restype = ctypes.c_double
         #self.lib.phi_integrand.argtypes = (ctypes.c_int,  ctypes.POINTER(ctypes.c_double))
         self.lib.phi_integrand.argtypes = (ctypes.c_int,  ctypes.c_double)
