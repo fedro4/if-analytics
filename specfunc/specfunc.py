@@ -47,12 +47,13 @@ nofallback = False
 
 lib = None
 libname = "libspecfunc.so"
+libdir = os.path.dirname(os.path.abspath(__file__))
 try:
-    lib = npct.load_library(libname, os.path.dirname(os.path.abspath(__file__)))
+    lib = npct.load_library(libname, libdir)
 except OSError as e:
     print e
     print("cannot load %s, falling back to mpmath..." % libname)
-    print("\t(you might need to compile the library in \n\t %s)" % os.path.dirname(__file__))
+    print("\t(you might need to compile the library in \n\t %s)" % libdir)
     use_mpmath = True
     #mp = __import__("mpmath")
 

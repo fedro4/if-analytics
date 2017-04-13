@@ -11,7 +11,7 @@ from analytics.specfunc import pcfd
 
 @dictparams
 @cached
-def r0(fs, mu, D, tr, vr, vt):
+def r0(mu, D, tr, vr, vt):
     return 1./(tr + sqrt(pi) * integrate(lambda z: exp(z**2) * erfc(z), (mu-vt)/sqrt(2*D), (mu-vr)/sqrt(2*D)))
 
 

@@ -20,8 +20,9 @@ infty=15
 epsrel = 1e-3
 
 eiflib = None
+eiflibpath = os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so"
 try:
-    eiflib = ctypes.cdll.LoadLibrary(os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so");
+    eiflib = ctypes.cdll.LoadLibrary(eiflibpath)
 except OSError:
     print "cannnot load './eif_phi/libeif_phi.so'. maybe you need to compile it? this is only a problem if you plan to use the EIF analytics"
 
@@ -96,7 +97,7 @@ class EIF:
         self.intcache = {}
 #        self.lib = ctypes.cdll.LoadLibrary(os.path.dirname(os.path.abspath(__file__)) + "/eif_phi/libeif_phi.so");
         if eiflib is None:
-            raise OSError("libeif_phi not loaded")
+            raise OSError("'%s' not loaded" % eiflibpath)
         self.lib = eiflib
         self.lib.phi_integrand.restype = ctypes.c_double
         #self.lib.phi_integrand.argtypes = (ctypes.c_int,  ctypes.POINTER(ctypes.c_double))
@@ -216,7 +217,6 @@ def T1(model, mu, rin_e, a_e, vr, vt, tr):
             return 0.
         #return integrate(lambda x: exp(-phi(x)+phi(l))/f(x), l, r)
         tmp = quad(lambda x: exp(-dphi(l, x))/f(x), l, r, epsrel=epsrel)[0]
-        #print l, r, tmp
         return tmp
 
     res = 0.
@@ -232,8 +232,6 @@ def T1(model, mu, rin_e, a_e, vr, vt, tr):
     l0, r0, c0 = ints[0]
     c0bar = l0 if c0 == r0 else r0
   
-    print "vr, c0bar", vr, c0bar
-
     return res + tr + minusint(vr, c0bar)
 
 @dictparams
